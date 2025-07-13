@@ -27,6 +27,7 @@ class Settings(BaseModel):
     # Bot Settings
     verse_schedule_time: str = "09:00"
     verse_schedule_timezone: str = "UTC"
+    verse_schedule_times: list[str] = []
     log_level: str = "INFO"
     
     # Database/Storage
@@ -76,6 +77,15 @@ def get_settings() -> Settings:
         additional_ids = [cid.strip() for cid in chat_ids_str.split(',') if cid.strip()]
         all_chat_ids.extend(additional_ids)
     
+    # Parse multiple schedule times
+    schedule_times_str = os.getenv('VERSE_SCHEDULE_TIMES', '')
+    schedule_time = os.getenv('VERSE_SCHEDULE_TIME', '09:00')
+    all_schedule_times = []
+    if schedule_times_str:
+        all_schedule_times = [t.strip() for t in schedule_times_str.split(',') if t.strip()]
+    elif schedule_time:
+        all_schedule_times = [schedule_time]
+    
     # Create settings from environment
     return Settings(
         telegram_bot_token=os.getenv('TELEGRAM_BOT_TOKEN', ''),
@@ -83,8 +93,9 @@ def get_settings() -> Settings:
         telegram_chat_ids=all_chat_ids,
         bible_api_key=os.getenv('BIBLE_API_KEY'),
         bible_api_base_url=os.getenv('BIBLE_API_BASE_URL', 'https://api.scripture.api.bible/v1'),
-        verse_schedule_time=os.getenv('VERSE_SCHEDULE_TIME', '09:00'),
+        verse_schedule_time=schedule_time,
         verse_schedule_timezone=os.getenv('VERSE_SCHEDULE_TIMEZONE', 'UTC'),
+        verse_schedule_times=all_schedule_times,
         log_level=os.getenv('LOG_LEVEL', 'INFO'),
         database_url=os.getenv('DATABASE_URL')
     )

@@ -164,15 +164,17 @@ Have a blessed day! 🙏
             return False
     
     def schedule_daily_verse(self):
-        """Schedule the daily verse sending."""
-        schedule_time = self.settings.verse_schedule_time
-        
-        logger.info(f"Scheduling daily verse for {schedule_time}")
-        
-        # Schedule the daily verse
-        schedule.every().day.at(schedule_time).do(
-            lambda: asyncio.run(self.send_daily_verse())
-        )
+        """Schedule the daily verse sending for all configured times."""
+        schedule_times = self.settings.verse_schedule_times
+        if not schedule_times:
+            schedule_times = [self.settings.verse_schedule_time]
+
+        logger.info(f"Scheduling daily verse for times: {schedule_times}")
+
+        for t in schedule_times:
+            schedule.every().day.at(t).do(
+                lambda: asyncio.run(self.send_daily_verse())
+            )
     
     async def run_scheduler(self):
         """Run the scheduler loop."""
