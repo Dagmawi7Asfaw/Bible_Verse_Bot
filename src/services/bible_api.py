@@ -13,6 +13,7 @@ from pathlib import Path
 from src.models.verse import BibleVerse, VerseRequest, VerseResponse
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
+from src.services.verse_history import verse_history
 
 logger = get_logger(__name__)
 
@@ -65,8 +66,52 @@ class BibleAPIService:
                 "book": "Romans",
                 "chapter": 8,
                 "verse": 28
+            },
+            {
+                "reference": "Proverbs 3:5-6",
+                "text": "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
+                "translation": "NIV",
+                "book": "Proverbs",
+                "chapter": 3,
+                "verse": 5
+            },
+            {
+                "reference": "Isaiah 40:31",
+                "text": "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.",
+                "translation": "NIV",
+                "book": "Isaiah",
+                "chapter": 40,
+                "verse": 31
+            },
+            {
+                "reference": "Matthew 28:19-20",
+                "text": "Therefore go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit, and teaching them to obey everything I have commanded you. And surely I am with you always, to the very end of the age.",
+                "translation": "NIV",
+                "book": "Matthew",
+                "chapter": 28,
+                "verse": 19
+            },
+            {
+                "reference": "Galatians 5:22-23",
+                "text": "But the fruit of the Spirit is love, joy, peace, forbearance, kindness, goodness, faithfulness, gentleness and self-control. Against such things there is no law.",
+                "translation": "NIV",
+                "book": "Galatians",
+                "chapter": 5,
+                "verse": 22
+            },
+            {
+                "reference": "Joshua 1:9",
+                "text": "Have I not commanded you? Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.",
+                "translation": "NIV",
+                "book": "Joshua",
+                "chapter": 1,
+                "verse": 9
             }
         ]
+        
+        # Initialize verse history with fallback verses
+        fallback_verse_objects = [BibleVerse(**verse_data) for verse_data in self.fallback_verses]
+        verse_history.set_available_verses(fallback_verse_objects)
     
     async def __aenter__(self):
         """Async context manager entry."""
@@ -162,16 +207,24 @@ class BibleAPIService:
         return None
     
     def _get_fallback_verse(self) -> VerseResponse:
-        """Get a verse from the fallback list."""
-        verse_data = random.choice(self.fallback_verses)
-        verse = BibleVerse(**verse_data)
+        """Get a verse from the fallback list using history tracking."""
+        verse = verse_history.get_next_verse()
         
-        logger.info(f"Using fallback verse: {verse.reference}")
-        
-        return VerseResponse(
-            success=True,
-            verse=verse
-        )
+        if verse:
+            logger.info(f"Using non-repeating verse: {verse.reference}")
+            return VerseResponse(
+                success=True,
+                verse=verse
+            )
+        else:
+            # Fallback to random selection if history service fails
+            verse_data = random.choice(self.fallback_verses)
+            verse = BibleVerse(**verse_data)
+            logger.warning(f"History service failed, using random verse: {verse.reference}")
+            return VerseResponse(
+                success=True,
+                verse=verse
+            )
     
     async def get_daily_verse(self) -> VerseResponse:
         """Get a verse for daily posting."""

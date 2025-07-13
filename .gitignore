@@ -56,3 +56,7 @@ Thumbs.db
 # Data files (if you want to exclude them)
 data/bible_verses/*.json
 data/logs/*.log
+data/verse_history.json
+
+# Local documentation (not for GitHub)
+SYSTEMD_SETUP.md
