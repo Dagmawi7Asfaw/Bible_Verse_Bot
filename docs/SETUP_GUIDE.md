@@ -252,14 +252,9 @@ VERSE_SCHEDULE_TIME=18:00  # 6:00 PM
 
 Edit `src/services/bible_api.py` and add more verses to the `fallback_verses` list.
 
-### Using a Bible API
+### Using the Bible API
 
-1. Get an API key from [Bible API](https://scripture.api.bible/)
-2. Add it to your `.env` file:
-
-   ```env
-   BIBLE_API_KEY=your_api_key_here
-   ```
+The bot now uses the free [wldeh/bible-api](https://github.com/wldeh/bible-api) CDN service, which provides multiple Bible translations without requiring any API keys or authentication.
 
 ## Security Notes
 

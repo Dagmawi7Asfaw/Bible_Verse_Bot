@@ -103,9 +103,8 @@ Create a `.env` file in the project root:
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_IDS=chat_id_1,chat_id_2,chat_id_3
 
-# Bible API Configuration (Optional)
-BIBLE_API_KEY=your_bible_api_key_here
-BIBLE_API_BASE_URL=https://api.scripture.api.bible/v1
+# Bible API Configuration
+# Using free wldeh/bible-api CDN - no API key required!
 
 # Bot Settings
 VERSE_SCHEDULE_TIME=09:00
@@ -200,14 +199,9 @@ self.fallback_verses = [
 ]
 ```
 
-### Using a Bible API
+### Using the Bible API
 
-1. Get an API key from [Bible API](https://scripture.api.bible/)
-2. Add it to your `.env` file:
-
-   ```env
-   BIBLE_API_KEY=your_api_key_here
-   ```
+The bot now uses the free [wldeh/bible-api](https://github.com/wldeh/bible-api) CDN service, which provides multiple Bible translations without requiring any API keys or authentication.
 
 ## 🚀 Deployment
 

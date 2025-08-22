@@ -20,10 +20,6 @@ class Settings(BaseModel):
     telegram_chat_id: str
     telegram_chat_ids: list[str] = []
     
-    # Bible API Configuration
-    bible_api_key: Optional[str] = None
-    bible_api_base_url: str = "https://api.scripture.api.bible/v1"
-    
     # Bot Settings
     verse_schedule_time: str = "09:00"
     verse_schedule_timezone: str = "UTC"
@@ -91,8 +87,6 @@ def get_settings() -> Settings:
         telegram_bot_token=os.getenv('TELEGRAM_BOT_TOKEN', ''),
         telegram_chat_id=os.getenv('TELEGRAM_CHAT_ID', ''),
         telegram_chat_ids=all_chat_ids,
-        bible_api_key=os.getenv('BIBLE_API_KEY'),
-        bible_api_base_url=os.getenv('BIBLE_API_BASE_URL', 'https://api.scripture.api.bible/v1'),
         verse_schedule_time=schedule_time,
         verse_schedule_timezone=os.getenv('VERSE_SCHEDULE_TIMEZONE', 'UTC'),
         verse_schedule_times=all_schedule_times,

@@ -90,8 +90,7 @@ TELEGRAM_BOT_TOKEN={bot_token}
 TELEGRAM_CHAT_ID={chat_id}
 
 # Bible API Configuration
-BIBLE_API_KEY=your_bible_api_key_here
-BIBLE_API_BASE_URL=https://api.scripture.api.bible/v1
+# Using free wldeh/bible-api CDN - no API key required!
 
 # Bot Settings
 VERSE_SCHEDULE_TIME={schedule_time}

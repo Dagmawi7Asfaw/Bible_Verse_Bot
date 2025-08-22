@@ -100,7 +100,7 @@ class BibleVerseBot:
 
 <b>— {verse.reference} ({verse.translation})</b>
 
-Have a blessed day! 🙏
+Have a blessed day! Mwaaaaah🙏
         """.strip()
         
         return message
