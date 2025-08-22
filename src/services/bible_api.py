@@ -37,6 +37,24 @@ class BibleAPIService:
             "en-ylt"     # Young's Literal Translation
         ]
         
+        # Bible books with their chapter counts for randomization
+        self.bible_books = {
+            "genesis": 50, "exodus": 40, "leviticus": 27, "numbers": 36, "deuteronomy": 34,
+            "joshua": 24, "judges": 21, "ruth": 4, "1samuel": 31, "2samuel": 24,
+            "1kings": 22, "2kings": 25, "1chronicles": 29, "2chronicles": 36, "ezra": 10,
+            "nehemiah": 13, "esther": 10, "job": 42, "psalms": 150, "proverbs": 31,
+            "ecclesiastes": 12, "songofsolomon": 8, "isaiah": 66, "jeremiah": 52,
+            "lamentations": 5, "ezekiel": 48, "daniel": 12, "hosea": 14, "joel": 3,
+            "amos": 9, "obadiah": 1, "jonah": 4, "micah": 7, "nahum": 3,
+            "habakkuk": 3, "zephaniah": 3, "haggai": 2, "zechariah": 14, "malachi": 4,
+            "matthew": 28, "mark": 16, "luke": 24, "john": 21, "acts": 28,
+            "romans": 16, "1corinthians": 16, "2corinthians": 13, "galatians": 6,
+            "ephesians": 6, "philippians": 4, "colossians": 4, "1thessalonians": 5,
+            "2thessalonians": 3, "1timothy": 6, "2timothy": 4, "titus": 3,
+            "philemon": 1, "hebrews": 13, "james": 5, "1peter": 5, "2peter": 3,
+            "1john": 5, "2john": 1, "3john": 1, "jude": 1, "revelation": 22
+        }
+        
         # Popular Bible verses as fallback
         self.fallback_verses = [
             {
@@ -177,19 +195,66 @@ class BibleAPIService:
             return self._get_fallback_verse()
     
     async def _get_random_verse(self, translation: str = "NIV") -> VerseResponse:
-        """Get a random verse."""
+        """Get a truly random verse from the Bible API."""
+        if not self.session:
+            return self._get_fallback_verse()
+        
         try:
-            # Try to get from Bible API if available
-            verse = await self._fetch_random_from_bible_api(translation)
-            if verse:
-                return VerseResponse(success=True, verse=verse)
+            # Map translation to available Bible version
+            bible_version = self._map_translation_to_version(translation)
             
-            # Fallback to local verses
+            # Try up to 5 random attempts to get a working verse
+            for attempt in range(5):
+                try:
+                    # Pick a random book
+                    book = random.choice(list(self.bible_books.keys()))
+                    max_chapters = self.bible_books[book]
+                    
+                    # Pick a random chapter (avoid chapter 1 for variety)
+                    chapter = random.randint(2, max_chapters) if max_chapters > 1 else 1
+                    
+                    # For books with many chapters, try to get a verse from the middle
+                    if max_chapters > 20:
+                        # Estimate verses per chapter (roughly 20-30 for most books)
+                        estimated_verses = random.randint(15, 35)
+                        verse_num = random.randint(1, min(estimated_verses, 50))
+                    else:
+                        # For shorter books, use a reasonable verse range
+                        verse_num = random.randint(1, 30)
+                    
+                    # Construct reference
+                    reference = f"{self._format_book_name(book)} {chapter}:{verse_num}"
+                    
+                    logger.info(f"Attempting random verse: {reference} (attempt {attempt + 1})")
+                    
+                    # Try to fetch this verse
+                    verse = await self._fetch_from_bible_api(reference, translation)
+                    if verse:
+                        logger.info(f"Successfully fetched random verse: {reference}")
+                        return VerseResponse(success=True, verse=verse)
+                        
+                except Exception as e:
+                    logger.debug(f"Attempt {attempt + 1} failed: {e}")
+                    continue
+            
+            logger.warning("Failed to fetch random verse after 5 attempts, using fallback")
             return self._get_fallback_verse()
-            
+                    
         except Exception as e:
-            logger.error(f"Error fetching random verse: {e}")
+            logger.error(f"Error fetching random verse from Bible API: {e}")
             return self._get_fallback_verse()
+    
+    def _format_book_name(self, book: str) -> str:
+        """Format book name for display (e.g., '1corinthians' -> '1 Corinthians')."""
+        if book.startswith('1') or book.startswith('2') or book.startswith('3'):
+            # Handle numbered books
+            number = book[0]
+            name = book[1:].title()
+            return f"{number} {name}"
+        elif book == "songofsolomon":
+            return "Song of Solomon"
+        else:
+            return book.title()
     
     async def _fetch_from_bible_api(self, reference: str, translation: str = "NIV") -> Optional[BibleVerse]:
         """Fetch verse from Bible API using wldeh/bible-api."""
@@ -235,34 +300,6 @@ class BibleAPIService:
                     
         except Exception as e:
             logger.error(f"Error fetching verse from Bible API: {e}")
-            return None
-    
-    async def _fetch_random_from_bible_api(self, translation: str = "NIV") -> Optional[BibleVerse]:
-        """Fetch random verse from Bible API."""
-        if not self.session:
-            return None
-        
-        try:
-            # Map translation to available Bible version
-            bible_version = self._map_translation_to_version(translation)
-            
-            # For random verses, we'll use a predefined list of popular references
-            popular_references = [
-                "John 3:16", "Psalm 23:1", "Philippians 4:13", "Jeremiah 29:11",
-                "Romans 8:28", "Proverbs 3:5", "Isaiah 40:31", "Matthew 28:19",
-                "Galatians 5:22", "Joshua 1:9", "Psalm 119:105", "2 Timothy 3:16"
-            ]
-            
-            # Try each reference until one works
-            for reference in popular_references:
-                verse = await self._fetch_from_bible_api(reference, translation)
-                if verse:
-                    return verse
-            
-            return None
-                    
-        except Exception as e:
-            logger.error(f"Error fetching random verse from Bible API: {e}")
             return None
     
     def _parse_reference(self, reference: str) -> Optional[tuple]:
@@ -374,11 +411,31 @@ class BibleAPIService:
             )
     
     async def get_daily_verse(self) -> VerseResponse:
-        """Get a verse for daily posting."""
-        # For daily verses, we can implement logic to avoid repetition
-        # For now, just get a random verse
-        request = VerseRequest(random=True, translation="KJV")
-        return await self.get_verse(request)
+        """Get a verse for daily posting with rotation and variety."""
+        try:
+            # Rotate through different translations for variety
+            translations = ["KJV", "ASV", "BBE", "DBY", "WBT", "WEB", "YLT"]
+            
+            # Use date-based rotation to ensure variety
+            import datetime
+            today = datetime.date.today()
+            day_of_year = today.timetuple().tm_yday
+            
+            # Rotate translation every week
+            translation_index = (day_of_year // 7) % len(translations)
+            selected_translation = translations[translation_index]
+            
+            logger.info(f"Using translation: {selected_translation} for day {day_of_year}")
+            
+            # Get a random verse with the selected translation
+            request = VerseRequest(random=True, translation=selected_translation)
+            return await self.get_verse(request)
+            
+        except Exception as e:
+            logger.error(f"Error in get_daily_verse: {e}")
+            # Fallback to KJV if rotation fails
+            request = VerseRequest(random=True, translation="KJV")
+            return await self.get_verse(request)
 
 
 # Convenience function

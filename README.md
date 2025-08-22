@@ -183,7 +183,15 @@ VERSE_SCHEDULE_TIMEZONE=America/New_York
 
 ### Adding More Verses
 
-Edit `src/services/bible_api.py` and add more verses to the `fallback_verses` list:
+The bot now uses **true randomization** from the entire Bible! It automatically:
+
+- **Picks random books** from all 66 books of the Bible
+- **Selects random chapters** (avoiding chapter 1 for variety)
+- **Chooses random verses** from each chapter
+- **Rotates through 7 translations** weekly (KJV, ASV, BBE, DBY, WBT, WEB, YLT)
+- **Tries up to 5 attempts** to find working verses
+
+No more hardcoded verse lists - every day brings a fresh, truly random Bible verse!
 
 ```python
 self.fallback_verses = [
